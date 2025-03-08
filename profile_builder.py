@@ -1,30 +1,34 @@
+"""Format Infinity profiles to more readable/usable form."""
 import json
 
+
 def load_json_from(filename):
+    """Return json data from a file with name filename."""
     json_data = {}
     try:
         with open(filename, 'r') as file:
             json_data = json.load(file)
-            file.close()
     except:
         pass
-        #print("Error reading " + str(filename))
+        # print("Error reading " + str(filename))
     return json_data
 
 
 def format_extra_string(extra_json):
-    extraStr = ""
+    """Return formatted string form of extra json object."""
+    extra_str = ""
     for extra_id in extra_json:
-        extraData = extrasDict[extra_id]
-        extraName = extraData["name"]
-        if extraData["type"].lower() == "distance":
-            extraFloat = float(extraName)
-            extraFloatInInch = convert_to_inch(extraFloat)
-            extraName = "+{}\"".format(extraFloatInInch)
-        extraStr += " ({})".format(extraName)
-    return extraStr
+        extra_data = extras_by_id[extra_id]
+        extra_name = extra_data["name"]
+        if extra_data["type"].lower() == "distance":
+            extra_in_inches = convert_to_inch(extra_name)
+            extra_name = "+{}\"".format(extra_in_inches)
+        extra_str += " ({})".format(extra_name)
+    return extra_str
 
-def build_list_from_json_and_dict(json_list, lookup_dict):
+
+def names_from_json_and_dict(json_list, lookup_dict):
+    """Get names from lookup_dict based on ids from json_list."""
     names = []
     for json_row in json_list:
         row_id = json_row["id"]
@@ -36,93 +40,89 @@ def build_list_from_json_and_dict(json_list, lookup_dict):
 
 
 def convert_to_inch(cm_value):
-    return int(cm_value * 4 / 10)
+    """Convert cm value to inch value (note: CB uses 4/10)."""
+    return int(float(cm_value) * 4 / 10)
 
 
 def convert_move_to_inch(moves_in_cm):
+    """Convert move list from cm to inches."""
     moves_in_inches = []
     for cm_move in moves_in_cm:
         inch_move = convert_to_inch(cm_move)
         moves_in_inches.append(inch_move)
     return moves_in_inches
 
-def buildProfileFromUnit(unitData):
-    for profileGroup in unitData["profileGroups"]:
-        formattedProfile = {"statLines": []}
-        numberOfStatLines = 0
-        for statLine in profileGroup["profiles"]:
-            formattedStatLine = {}
-            #print(str(statLine["name"]))
-            formattedStatLine["name"] = statLine["name"]
-            formattedStatLine["mov"] = convert_move_to_inch(statLine["move"])
-            formattedStatLine["cc"] = statLine["cc"]
-            formattedStatLine["bs"] = statLine["bs"]
-            formattedStatLine["ph"] = statLine["ph"]
-            formattedStatLine["wip"] = statLine["wip"]
-            formattedStatLine["arm"] = statLine["arm"]
-            formattedStatLine["bts"] = statLine["bts"]
-            formattedStatLine["w"] = statLine["w"]
-            formattedStatLine["s"] = statLine["s"]
-            formattedStatLine["ava"] = statLine["ava"]
-            formattedStatLine["is_str"] = statLine["str"]
-            formattedStatLine["equipment"] = build_list_from_json_and_dict(statLine["equip"], equipmentDict)
-            formattedStatLine["skills"] = build_list_from_json_and_dict(statLine["skills"], skillsDict)
-            formattedProfile["statLines"].append(formattedStatLine)
-            numberOfStatLines += 1
-        #formattedStatLine["profileOptions"] = createOptionsList(
-        if numberOfStatLines > 1:
-            print(str(formattedProfile))
+
+def build_profile_from_unit_data(unit_data):
+    """Take a single unit json data and format to readable stats."""
+    for profile_group in unit_data["profileGroups"]:
+        formatted_profile = {"statLines": []}
+        statline_count = len(profile_group["profiles"])
+        for raw_statline in profile_group["profiles"]:
+            new_statline = {}
+            new_statline["name"] = raw_statline["name"]
+            new_statline["mov"] = convert_move_to_inch(raw_statline["move"])
+            new_statline["cc"] = raw_statline["cc"]
+            new_statline["bs"] = raw_statline["bs"]
+            new_statline["ph"] = raw_statline["ph"]
+            new_statline["wip"] = raw_statline["wip"]
+            new_statline["arm"] = raw_statline["arm"]
+            new_statline["bts"] = raw_statline["bts"]
+            new_statline["w"] = raw_statline["w"]
+            new_statline["s"] = raw_statline["s"]
+            new_statline["ava"] = raw_statline["ava"]
+            new_statline["is_str"] = raw_statline["str"]
+            equipment = names_from_json_and_dict(raw_statline["equip"], equipment_by_id)
+            new_statline["equipment"] = equipment
+            skills = names_from_json_and_dict(raw_statline["skills"], skills_by_id)
+            new_statline["skills"] = skills
+            formatted_profile["statLines"].append(new_statline)
+        if statline_count > 1:
+            print(str(formatted_profile))
 
 
-def updateIdDict(idNameJson, passedDict = {}):
-    idNameDict = passedDict
-    for jsonRow in idNameJson:
-        idIndex = jsonRow["id"]
-        nameValue = jsonRow["name"]
-        idNameDict[idIndex] = jsonRow
-    return idNameDict
+def update_id_dict(json_data, dict_to_update):
+    """Update dict_to_update with id/value pairs."""
+    for json_row in json_data:
+        json_id = json_row["id"]
+        dict_to_update[json_id] = json_row
 
 
-def updateIdDictFromFileName(filename):
-    data = load_json_from(filename)
-    return updateIdDict(data)
+def update_filter_dicts(filters_data):
+    """Use filters_data to update all of the filters dicts."""
+    def update_filter_type(filter_type, existing_dict):
+        """Use filters_data[filter_type) to update existing_dict."""
+        update_id_dict(filters_data[filter_type], existing_dict)
+
+    update_filter_type("weapons", weapons_by_id)
+    update_filter_type("equip", equipment_by_id)
+    update_filter_type("skills", skills_by_id)
+    update_filter_type("extras", extras_by_id)
+    update_filter_type("peripheral", peripherals_by_id)
+    update_filter_type("category", categories_by_id)
+    update_filter_type("ammunition", ammo_by_id)
+    update_filter_type("chars", characteristics_by_id)
+    update_filter_type("type", unit_type_by_id)
 
 
-def updateFilterDicts(factionDataArg):
-    factionFiltersData = factionDataArg["filters"]
+factions_json = load_json_from("factions.json")
+# the following are populated in the update_filter_dicts() function
+weapons_by_id = {}
+equipment_by_id = {}
+skills_by_id = {}
+extras_by_id = {}
+peripherals_by_id = {}
+categories_by_id = {}
+ammo_by_id = {}
+characteristics_by_id = {}
+unit_type_by_id = {}
 
-    def updateDictWithFilterData(keyStr, existingDict):
-        return updateIdDict(factionFiltersData[keyStr], existingDict)
+for faction_row in factions_json:
+    faction_filename = str(faction_row["id"]) + ".json"
+    faction_data = load_json_from(faction_filename)
 
-    updateDictWithFilterData("weapons", weaponsDict)
-    updateDictWithFilterData("equip", equipmentDict)
-    updateDictWithFilterData("skills", skillsDict)
-    updateDictWithFilterData("extras", extrasDict)
-    updateDictWithFilterData("peripheral", peripheralsDict)
-    updateDictWithFilterData("category", categoriesDict)
-    updateDictWithFilterData("ammunition", ammoDict)
-    updateDictWithFilterData("chars", characteristicsDict)
-    updateDictWithFilterData("type", unitTypeDict)
+    if faction_data:
+        update_filter_dicts(faction_data["filters"])
 
-
-factionsJson = load_json_from("factions.json")
-# the following are populated in the updateFilterDicts() function
-weaponsDict = {}
-equipmentDict = {}
-skillsDict = {}
-extrasDict = {}
-peripheralsDict = {}
-categoriesDict = {}
-ammoDict = {}
-characteristicsDict = {}
-unitTypeDict = {}
-
-for factionMetadata in factionsJson:
-    factionFileName = str(factionMetadata["id"]) + ".json"
-    factionData = load_json_from(factionFileName)
-
-    if factionData:
-        updateFilterDicts(factionData)
-
-        for unit in factionData["units"]:
-            buildProfileFromUnit(unit)
+        for unit in faction_data["units"]:
+            build_profile_from_unit_data(unit)
