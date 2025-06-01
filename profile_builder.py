@@ -61,7 +61,7 @@ def load_json_from(filename):
 
 def get_factions_json():
     """Get factions data."""
-    return load_json_from("jsons/factions.json")
+    return load_json_from("factions.json")
 
 
 def format_extra_string(extra_json):
@@ -136,8 +136,8 @@ def build_statlines(profile_group, name_slug):
         new_statline["unit type"] = unit_type
         
         for skill in new_statline["skills"]:
-            if "Super-Jump (+8" in skill and "REINF: " not in new_statline["name"]:
-                found_dict[name_slug] = skill
+            # if "Super-Jump (+3" in skill and "REINF: " not in new_statline["name"]:
+                # found_dict[name_slug] = skill
         
         statlines.append(new_statline)
     return statlines
@@ -194,7 +194,8 @@ def build_team_profile(unit_data):
     # if "kerail" in team_profile["name"]:
         # example of complicated unit; multiple statlines, multiple troops
         # print(json.dumps(team_profile))
-
+    if "merc" not in team_profile["name"] and "wolff" in team_profile["name"]:
+        print(json.dumps(team_profile))
 
 
 def update_id_dict(json_data, dict_to_update):
@@ -236,17 +237,18 @@ unit_type_by_id = {}
 
 
 for faction_row in factions_json:
-    faction_filename = "jsons/"+str(faction_row["id"]) + ".json"
-    faction_data = load_json_from(faction_filename)
+    if faction_row["id"] != 901: # 901 is placeholder for NA2 "parent" faction
+        faction_filename = str(faction_row["id"]) + ".json"
+        faction_data = load_json_from(faction_filename)
 
-    if faction_data:
-        factions.append(faction_data)
-        update_filter_dicts(faction_data["filters"])
+        if faction_data:
+            factions.append(faction_data)
+            update_filter_dicts(faction_data["filters"])
 
 for faction in factions:
-    for unit in faction["units"]:
+    for team in faction["units"]:
         # "units" aren't necessarily 1 trooper. e.g. Carmen & Batard
-        build_team_profile(unit)
+        build_team_profile(team)
 
 print(json.dumps(found_dict))
 print(json.dumps(len(found_dict)))
