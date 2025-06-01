@@ -2,15 +2,17 @@
 import json
 
 
+json_data_root_path = "Generate jsons/jsons/"
 def load_json_from(filename):
     """Return json data from a file with name filename."""
     json_data = {}
     try:
-        with open(filename, 'r') as file:
+        filepath = json_data_root_path + filename
+        with open(filepath, 'r') as file:
             json_data = json.load(file)
     except:
         pass
-        # print("Error reading " + str(filename))
+        print("Error reading " + str(filename))
     return json_data
 
 
