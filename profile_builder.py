@@ -135,7 +135,7 @@ def build_statlines(profile_group, name_slug):
         unit_type = unit_type_by_id[raw_statline["type"]]["name"]
         new_statline["unit type"] = unit_type
         
-        for skill in new_statline["skills"]:
+        # for skill in new_statline["skills"]:
             # if "Super-Jump (+3" in skill and "REINF: " not in new_statline["name"]:
                 # found_dict[name_slug] = skill
         
@@ -171,6 +171,12 @@ def format_profile(trooper_option):
     profile_details["equipment"] = get_properties_by_type(trooper_option, "equipment")
     profile_details["skills"] = get_properties_by_type(trooper_option, "skills")
     profile_details["peripherals"] = get_properties_by_type(trooper_option, "peripherals")
+    profile_details["point_cost"] = trooper_option["points"]
+    multiplier = 1
+    swc_str = trooper_option["swc"]
+    if "+" in swc_str:
+        multiplier = -1
+    profile_details["swc_cost"] = multiplier * float(swc_str)
     return profile_details
 
 
