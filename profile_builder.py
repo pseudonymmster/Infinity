@@ -165,6 +165,15 @@ def get_properties_by_type(trooper_option, property_type):
     return properties
 
 
+def format_swc_cost(swc_str):
+    final_cost = float(0)
+    if "-" not in swc_str:
+        final_cost = float(swc_str)
+        if "+" in swc_str:
+            final_cost = -1 * final_cost
+    return final_cost
+
+
 def format_profile(trooper_option):
     profile_details = {}
     profile_details["weapons"] = get_properties_by_type(trooper_option, "weapons")
@@ -172,11 +181,9 @@ def format_profile(trooper_option):
     profile_details["skills"] = get_properties_by_type(trooper_option, "skills")
     profile_details["peripherals"] = get_properties_by_type(trooper_option, "peripherals")
     profile_details["point_cost"] = trooper_option["points"]
-    multiplier = 1
-    swc_str = trooper_option["swc"]
-    if "+" in swc_str:
-        multiplier = -1
-    profile_details["swc_cost"] = multiplier * float(swc_str)
+    swc_cost = format_swc_cost(trooper_option["swc"])
+    profile_details["swc_cost"] = swc_cost
+    
     return profile_details
 
 
