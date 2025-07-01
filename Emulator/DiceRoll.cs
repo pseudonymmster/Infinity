@@ -13,6 +13,7 @@ public class DiceRoll
     public List<int> NormalSuccesses;
     public List<int> CriticalSuccesses;
     public int NumberOfSpecialDice;
+    // public Player Owner; //used to reference person who rolled dice, for who won a face2face, etc.
 
     private DiceRoll(List<int> valuesRolledArg, int successValueArg, int numberOfSpecialDiceArg, bool needsCalculation)
     {
@@ -42,6 +43,16 @@ public class DiceRoll
 
     public DiceRoll(List<int> valuesRolledArg, int successValueArg):
         this(valuesRolledArg, successValueArg, 0, true)
+    {
+    }
+
+    public DiceRoll(int successValueArg):
+        this(new List<int>(), successValueArg, 0, true)
+    {
+    }
+
+    public DiceRoll():
+        this(new List<int>(), 0, 0, true)
     {
     }
 
@@ -102,19 +113,22 @@ public class DiceRoll
 
     public static DiceRoll operator -(DiceRoll left, DiceRoll right)
     {
-        DiceRoll difference = new DiceRoll(left);
+        List<int> relevantRolls = new List<int>(left.CriticalSuccesses);
+        relevantRolls.AddRange(left.NormalSuccesses);
+        DiceRoll difference = new DiceRoll(relevantRolls, left.SuccessValue);
         if(right.CriticalSuccesses.Count > 0)
         {
-            difference.NormalSuccesses = new List<int>{};
-            difference.CriticalSuccesses = new List<int> {};
+            difference = new DiceRoll(left.SuccessValue);
         }
         else if(right.NormalSuccesses.Count > 0)
         {
             int rightMaxValue = right.NormalSuccesses[0];
+            Console.WriteLine("RightMaxValue: " + rightMaxValue.ToString());
             foreach(int successValue in left.NormalSuccesses)
             {
-                if(successValue < rightMaxValue)
+                if(successValue <= rightMaxValue)
                 {
+                    difference.DiceValues.Remove(successValue);
                     difference.NormalSuccesses.Remove(successValue);
                 }
             }
@@ -140,8 +154,13 @@ public class DiceRoll
             if(difference.NormalSuccesses.Count + difference.CriticalSuccesses.Count > 0)
             {
                 winner = right;
-                winnerAdjustedDiceRoll = difference;
             }
+            else
+            {
+                winner = new DiceRoll();
+                
+            }
+            winnerAdjustedDiceRoll = difference;
         }
         return new DiceRoll[] {winner, winnerAdjustedDiceRoll};
     }
@@ -149,10 +168,14 @@ public class DiceRoll
     static void Main(string[] args)
     {
         // Replace with proper unit testing
-        List<int> testerRolls = new List<int>{1,2,3,3,4};
+        List<int> testerRolls = new List<int>{12,13,14,15,15};
         List<int> testerRolls2 = new List<int>{2,2,3,3,4,7,8};
-        DiceRoll tester = new DiceRoll(testerRolls, 5, 1);
-        DiceRoll tester2 = new DiceRoll(testerRolls, 9, 1);
+        DiceRoll tester = new DiceRoll(testerRolls, 10, 1);
+        DiceRoll tester2 = new DiceRoll(testerRolls2, 4, 1);
+        Console.WriteLine("DiceRoll 1: ({0}) {1}", tester.SuccessValue, string.Join(",", tester.DiceValues));
+        Console.WriteLine("DiceRoll 2: ({0}) {1}", tester2.SuccessValue, string.Join(",", tester2.DiceValues));
+        Console.WriteLine("DiceRoll 1-2: [{0}]", string.Join(",", (tester-tester2).DiceValues));
+        Console.WriteLine("DiceRoll 2-1: [{0}]", string.Join(",", (tester2-tester).DiceValues));
         DiceRoll[] winnerAndValues = Face2Face(tester, tester2);
         string winnerStr = string.Join(",", winnerAndValues[0].DiceValues);
         string winnerAdjValuesStr = string.Join(",", winnerAndValues[1].DiceValues);
@@ -169,8 +192,6 @@ public class DiceRoll
     }
 }
 
-// this.DiceValues = int[] DiceValues
-
 // CalculateSuccessesAndCrits(DiceRoll rollToBeChecked, Boolean calculateSuccesses): Return DiceRoll
 // There will be a method for normal rolls, which will return return a DiceRoll object that has the dice rolled at or below the target number (or have an empty array if unsuccessful). Also, number of crits will be calculated.
 // input will be 1 DiceRoll object
@@ -180,4 +201,3 @@ public class DiceRoll
 
 // There will be a method for face to face rolls, which will return a DiceRoll object that has the successful dice (or have an empty array if unsuccessful), and a True if the dice were from the first DiceRoll object, and a false if from the second DiceRoll object. Also, number of crits will be calculated. (Crit vs crit, or tie vs tie, will return a DiceRoll object with 0 crits and an empty array)
 // input will be 2 DiceRoll objects
-
